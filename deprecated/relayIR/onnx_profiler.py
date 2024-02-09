@@ -96,11 +96,15 @@ def compile_onnx_model(onnx_model, data, target = "cuda", input_names = None, fr
     return mod, params,intrp
 
 def compile_tvm_mod(mod, device = tvm.cpu(0), target = "llvm"):
+    """"""
+    
     with tvm.transform.PassContext(opt_level=1):
         interpreter = relay.build_module.create_executor("graph", mod, device, target)
     return interpreter
 
 def run_interpreter(interpreter, x, params, dtype="float32"):
+    """"""
+    
     top1_tvm = interpreter.evaluate()(tvm.nd.array(x.astype(dtype)), **params)
     print("forward run value:")
     print(top1_tvm.numpy())
