@@ -29,7 +29,7 @@ def create_onnx_model_from_local_path(abs_path='resnet18.onnx'):
     onnx_model = onnx.load(abs_path)
     return onnx_model
 
-def generate_input_image_data_with_torchvision(img_url = "https://s3.amazonaws.com/model-server/inputs/kitten.jpg", img_name="imagenet_cat.png", module="data",resize1 = (224, 224), resize2 = 256, crop = 224, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+def generate_input_image_data_with_torchvision(img_url = "https://s3.amazonaws.com/model-server/inputs/kitten.jpg", img_name="imagenet_cat.png", module="data",resize1 = (224, 224), resize2 = 256, crop = 224, mean=None, std=None):
     """
     convert picture to tvm input.
 
@@ -48,6 +48,8 @@ def generate_input_image_data_with_torchvision(img_url = "https://s3.amazonaws.c
     ----------
     :return x: numpy tensor type
     """
+    mean = [0.485, 0.456, 0.406] if mean is None else mean
+    std = [0.229, 0.224, 0.225] if std is None else std
     img_path = download_testdata(img_url, img_name, module=module)
     img = Image.open(img_path).resize(resize1)
     my_preprocess = transforms.Compose([
@@ -61,7 +63,7 @@ def generate_input_image_data_with_torchvision(img_url = "https://s3.amazonaws.c
     x = np.expand_dims(img, 0)
     return x
 
-def compile_onnx_model(onnx_model, data, target = "cuda", input_names = [], freeze_params=False, device = tvm.cuda(0), tvm_mod = "graph"):
+def compile_onnx_model(onnx_model, data, target = "cuda", input_names = None, freeze_params=False, device = tvm.cuda(0), tvm_mod = "graph"):
     """
     compile onnx model
 
@@ -79,6 +81,7 @@ def compile_onnx_model(onnx_model, data, target = "cuda", input_names = [], free
     :return params: pre-trained parameters in onnx model
     :return intrp: model executor in tvm
     """
+    input_names = [] if input_names is None else input_names
     #shape_dict = {input_name: x.shape}
     shape_dict = {input_names[i] : data[i].shape for i in range(len(data))}
     mod, params = relay.frontend.from_onnx(onnx_model, shape_dict,freeze_params=freeze_params)
